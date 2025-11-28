@@ -1,62 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>水壺客製化預覽 Demo</title>
-<style>
-  body {
-    font-family: sans-serif;
-    background: #f7f7f7;
-    padding: 20px;
-  }
-  #container {
-    position: relative;
-    width: 300px;
-    margin-bottom: 20px;
-  }
-  #bottle {
-    width: 100%;
-    display: block;
-  }
-  #designCanvas {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    pointer-events: none;
-  }
-</style>
-</head>
-<body>
-
-<h2>水壺客製化預覽 Demo</h2>
-
-<div id="container">
-  <img id="bottle" src="waterbottle.png">
-  <canvas id="designCanvas"></canvas>
-</div>
-
-<!-- 上傳圖片 -->
-<label>上傳圖片：</label>
-<input type="file" id="imgUpload"><br><br>
-
-<!-- 文字 -->
-<label>新增文字：</label>
-<input type="text" id="textInput" placeholder="輸入文字"><br><br>
-
-<!-- 換色控制 -->
-<label>瓶身顏色：</label>
-<input type="color" id="colorBody" value="#ffffff"><br><br>
-
-<label>瓶蓋顏色：</label>
-<input type="color" id="colorCap" value="#cccccc"><br><br>
-
-<label>提帶顏色：</label>
-<input type="color" id="colorHandle" value="#cccccc"><br><br>
-
-<button id="clearBtn">清除設計</button>
-
 <script>
 const canvas = document.getElementById("designCanvas");
 const ctx = canvas.getContext("2d");
@@ -71,70 +12,131 @@ const colorHandle = document.getElementById("colorHandle");
 
 let uploadedImg = null;
 
-// 設定 canvas 大小
+// --------------------------------------------------------
+// 設定 Canvas 尺寸
+// --------------------------------------------------------
 bottle.onload = () => {
   canvas.width = bottle.width;
   canvas.height = bottle.height;
   redrawAll();
 };
 
-// 重新渲染所有內容
+// --------------------------------------------------------
+// 主要重新渲染函式
+// --------------------------------------------------------
 function redrawAll() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // --- 顏色區域繪製 ---
   drawColorAreas();
 
-  // --- 上傳圖片 ---
+  // 上傳圖片
   if (uploadedImg) {
-    ctx.drawImage(uploadedImg, 60, 120, 180, 180);
+    ctx.drawImage(uploadedImg, 90, 180, 130, 130);
   }
 
-  // --- 文字 ---
+  // 文字
   if (textInput.value) {
     ctx.font = "24px sans-serif";
     ctx.fillStyle = "black";
-    ctx.fillText(textInput.value, 80, 330);
+    ctx.fillText(textInput.value, 90, 340);
   }
 }
 
-// 分區著色
+// --------------------------------------------------------
+// ★★★ 分區著色：已改成「曲線版 beginPath()」
+// --------------------------------------------------------
 function drawColorAreas() {
 
-  // ---- 1. 瓶蓋 ----
+  // -------------------------------------------
+  // 1) 曲線瓶蓋
+  // -------------------------------------------
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(90, 0, 120, 60); // 上方蓋子區域（你可微調）
+  pathCap(ctx);
   ctx.clip();
-  ctx.fillStyle = colorCap.value + "99"; // 半透明
+  ctx.fillStyle = colorCap.value + "88";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // ---- 2. 瓶身 ----
+
+  // -------------------------------------------
+  // 2) 曲線瓶身
+  // -------------------------------------------
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(60, 60, 180, 270); // 中間瓶身
+  pathBody(ctx);
   ctx.clip();
-  ctx.fillStyle = colorBody.value + "88";
+  ctx.fillStyle = colorBody.value + "77";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  // ---- 3. 提帶 ----
+
+  // -------------------------------------------
+  // 3) 曲線提帶（含圓環）
+  // -------------------------------------------
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(230, 40, 40, 220); // 右邊提帶（簡化形狀）
+  pathStrap(ctx);
   ctx.clip();
   ctx.fillStyle = colorHandle.value + "99";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 }
 
-// 顏色變動都重新渲染
+// --------------------------------------------------------
+// ★★★ 分區形狀 Path（完全依照你圖片量身訂製）
+// --------------------------------------------------------
+
+// ① 瓶蓋（圓角 + 上凸）
+function pathCap(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(90, 40);
+  ctx.quadraticCurveTo(150, -10, 210, 40);   // 上圓弧
+  ctx.quadraticCurveTo(230, 90, 210, 130);   // 右側
+  ctx.lineTo(90, 130);
+  ctx.quadraticCurveTo(70, 90, 90, 40);      // 左側
+  ctx.closePath();
+}
+
+// ② 瓶身（上下圓角 + 側邊微弧）
+function pathBody(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(70, 140);
+  ctx.quadraticCurveTo(55, 170, 55, 210);     // 左上圓角
+  ctx.lineTo(55, 500);
+  ctx.quadraticCurveTo(55, 540, 90, 560);     // 左下圓角
+
+  ctx.lineTo(215, 560);
+  ctx.quadraticCurveTo(245, 540, 245, 500);   // 右下圓角
+  ctx.lineTo(245, 210);
+  ctx.quadraticCurveTo(245, 170, 230, 140);   // 右上圓角
+  ctx.closePath();
+}
+
+// ③ 提帶 + 圓環（完整兩個圈）
+function pathStrap(ctx) {
+  ctx.beginPath();
+
+  // 直條帶子
+  ctx.moveTo(150, 180);
+  ctx.lineTo(172, 180);
+  ctx.lineTo(172, 430);
+  ctx.lineTo(150, 430);
+  ctx.closePath();
+
+  // 上方小圈
+  ctx.moveTo(161, 435);
+  ctx.arc(161, 460, 25, 0, Math.PI * 2);
+
+  // 下方大圈
+  ctx.moveTo(161, 515);
+  ctx.arc(161, 515, 35, 0, Math.PI * 2);
+}
+
+// --------------------------------------------------------
+// 綁定事件
+// --------------------------------------------------------
 colorBody.addEventListener("input", redrawAll);
 colorCap.addEventListener("input", redrawAll);
 colorHandle.addEventListener("input", redrawAll);
 
-// 上傳圖片
 imgUpload.addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -147,16 +149,11 @@ imgUpload.addEventListener("change", e => {
   img.src = URL.createObjectURL(file);
 });
 
-// 文字
 textInput.addEventListener("input", redrawAll);
 
-// 清除按鈕
 clearBtn.addEventListener("click", () => {
   uploadedImg = null;
   textInput.value = "";
   redrawAll();
 });
 </script>
-
-</body>
-</html>
