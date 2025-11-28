@@ -37,11 +37,23 @@
   <canvas id="designCanvas"></canvas>
 </div>
 
+<!-- 上傳圖片 -->
 <label>上傳圖片：</label>
 <input type="file" id="imgUpload"><br><br>
 
+<!-- 文字 -->
 <label>新增文字：</label>
 <input type="text" id="textInput" placeholder="輸入文字"><br><br>
+
+<!-- 換色控制 -->
+<label>瓶身顏色：</label>
+<input type="color" id="colorBody" value="#ffffff"><br><br>
+
+<label>瓶蓋顏色：</label>
+<input type="color" id="colorCap" value="#cccccc"><br><br>
+
+<label>提帶顏色：</label>
+<input type="color" id="colorHandle" value="#cccccc"><br><br>
 
 <button id="clearBtn">清除設計</button>
 
@@ -53,37 +65,97 @@ const imgUpload = document.getElementById("imgUpload");
 const textInput = document.getElementById("textInput");
 const clearBtn = document.getElementById("clearBtn");
 
-// 設定 canvas 大小與水壺相同
+const colorBody = document.getElementById("colorBody");
+const colorCap = document.getElementById("colorCap");
+const colorHandle = document.getElementById("colorHandle");
+
+let uploadedImg = null;
+
+// 設定 canvas 大小
 bottle.onload = () => {
   canvas.width = bottle.width;
   canvas.height = bottle.height;
+  redrawAll();
 };
+
+// 重新渲染所有內容
+function redrawAll() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // --- 顏色區域繪製 ---
+  drawColorAreas();
+
+  // --- 上傳圖片 ---
+  if (uploadedImg) {
+    ctx.drawImage(uploadedImg, 60, 120, 180, 180);
+  }
+
+  // --- 文字 ---
+  if (textInput.value) {
+    ctx.font = "24px sans-serif";
+    ctx.fillStyle = "black";
+    ctx.fillText(textInput.value, 80, 330);
+  }
+}
+
+// 分區著色
+function drawColorAreas() {
+
+  // ---- 1. 瓶蓋 ----
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(90, 0, 120, 60); // 上方蓋子區域（你可微調）
+  ctx.clip();
+  ctx.fillStyle = colorCap.value + "99"; // 半透明
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  // ---- 2. 瓶身 ----
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(60, 60, 180, 270); // 中間瓶身
+  ctx.clip();
+  ctx.fillStyle = colorBody.value + "88";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  // ---- 3. 提帶 ----
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(230, 40, 40, 220); // 右邊提帶（簡化形狀）
+  ctx.clip();
+  ctx.fillStyle = colorHandle.value + "99";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+// 顏色變動都重新渲染
+colorBody.addEventListener("input", redrawAll);
+colorCap.addEventListener("input", redrawAll);
+colorHandle.addEventListener("input", redrawAll);
 
 // 上傳圖片
 imgUpload.addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
+
   const img = new Image();
   img.onload = () => {
-    ctx.drawImage(img, 60, 120, 180, 180); // 貼在水壺正面（可調整）
+    uploadedImg = img;
+    redrawAll();
   };
   img.src = URL.createObjectURL(file);
 });
 
-// 加文字
-textInput.addEventListener("input", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "24px sans-serif";
-  ctx.fillStyle = "black";
-  ctx.fillText(textInput.value, 80, 330); // 文字位置（可調整）
-});
+// 文字
+textInput.addEventListener("input", redrawAll);
 
-// 清除
+// 清除按鈕
 clearBtn.addEventListener("click", () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  uploadedImg = null;
   textInput.value = "";
+  redrawAll();
 });
-
 </script>
 
 </body>
