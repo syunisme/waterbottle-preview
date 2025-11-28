@@ -12,20 +12,30 @@ const colorHandle = document.getElementById("colorHandle");
 
 let uploadedImg = null;
 
+
 // --------------------------------------------------------
-// 設定 Canvas 尺寸
+// ★ Canvas 大小永遠跟圖片顯示大小一樣（最重要修正）
 // --------------------------------------------------------
-bottle.onload = () => {
-  canvas.width = bottle.width;
-  canvas.height = bottle.height;
+function resizeCanvasToBottle() {
+  const rect = bottle.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
   redrawAll();
-};
+}
+
+bottle.onload = resizeCanvasToBottle;
+window.addEventListener("resize", resizeCanvasToBottle);
+
 
 // --------------------------------------------------------
 // 主要重新渲染函式
 // --------------------------------------------------------
 function redrawAll() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const scale = canvas.width / 300;  
+  ctx.save();
+  ctx.scale(scale, scale);
 
   drawColorAreas();
 
@@ -40,16 +50,17 @@ function redrawAll() {
     ctx.fillStyle = "black";
     ctx.fillText(textInput.value, 90, 340);
   }
+
+  ctx.restore();
 }
 
+
 // --------------------------------------------------------
-// ★★★ 分區著色：已改成「曲線版 beginPath()」
+// 分區著色（曲線版）
 // --------------------------------------------------------
 function drawColorAreas() {
 
-  // -------------------------------------------
   // 1) 曲線瓶蓋
-  // -------------------------------------------
   ctx.save();
   pathCap(ctx);
   ctx.clip();
@@ -57,10 +68,7 @@ function drawColorAreas() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-
-  // -------------------------------------------
   // 2) 曲線瓶身
-  // -------------------------------------------
   ctx.save();
   pathBody(ctx);
   ctx.clip();
@@ -68,10 +76,7 @@ function drawColorAreas() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-
-  // -------------------------------------------
-  // 3) 曲線提帶（含圓環）
-  // -------------------------------------------
+  // 3) 提帶 + 圓環
   ctx.save();
   pathStrap(ctx);
   ctx.clip();
@@ -80,37 +85,38 @@ function drawColorAreas() {
   ctx.restore();
 }
 
+
 // --------------------------------------------------------
-// ★★★ 分區形狀 Path（完全依照你圖片量身訂製）
+// Path（依照你圖片量好的座標）
 // --------------------------------------------------------
 
-// ① 瓶蓋（圓角 + 上凸）
+// ① 瓶蓋
 function pathCap(ctx) {
   ctx.beginPath();
   ctx.moveTo(90, 40);
-  ctx.quadraticCurveTo(150, -10, 210, 40);   // 上圓弧
-  ctx.quadraticCurveTo(230, 90, 210, 130);   // 右側
+  ctx.quadraticCurveTo(150, -10, 210, 40);
+  ctx.quadraticCurveTo(230, 90, 210, 130);
   ctx.lineTo(90, 130);
-  ctx.quadraticCurveTo(70, 90, 90, 40);      // 左側
+  ctx.quadraticCurveTo(70, 90, 90, 40);
   ctx.closePath();
 }
 
-// ② 瓶身（上下圓角 + 側邊微弧）
+// ② 瓶身
 function pathBody(ctx) {
   ctx.beginPath();
   ctx.moveTo(70, 140);
-  ctx.quadraticCurveTo(55, 170, 55, 210);     // 左上圓角
+  ctx.quadraticCurveTo(55, 170, 55, 210);
   ctx.lineTo(55, 500);
-  ctx.quadraticCurveTo(55, 540, 90, 560);     // 左下圓角
+  ctx.quadraticCurveTo(55, 540, 90, 560);
 
   ctx.lineTo(215, 560);
-  ctx.quadraticCurveTo(245, 540, 245, 500);   // 右下圓角
+  ctx.quadraticCurveTo(245, 540, 245, 500);
   ctx.lineTo(245, 210);
-  ctx.quadraticCurveTo(245, 170, 230, 140);   // 右上圓角
+  ctx.quadraticCurveTo(245, 170, 230, 140);
   ctx.closePath();
 }
 
-// ③ 提帶 + 圓環（完整兩個圈）
+// ③ 提帶 + 圓環
 function pathStrap(ctx) {
   ctx.beginPath();
 
@@ -129,6 +135,7 @@ function pathStrap(ctx) {
   ctx.moveTo(161, 515);
   ctx.arc(161, 515, 35, 0, Math.PI * 2);
 }
+
 
 // --------------------------------------------------------
 // 綁定事件
